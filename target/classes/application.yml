@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: finance-api
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+       "[hibernate.format_sql]": true
+       "[hibernate.jdbc.time_zone]": "UTC"
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    "[com.finance.api]": DEBUG
+
+security:
+  jwt:
+    issuer: "finance-api"
+    access:
+      ttl: 900        
+    refresh:
+      ttl: 2592000   
+    secret: ${JWT_SECRET:change-me-super-secret}  
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
