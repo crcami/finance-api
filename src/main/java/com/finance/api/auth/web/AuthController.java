@@ -9,10 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.finance.api.auth.application.AuthService;
+import com.finance.api.auth.application.AuthService; // <- NEW
 import com.finance.api.auth.domain.LoginRequest;
 import com.finance.api.auth.domain.LoginResponse;
 import com.finance.api.auth.domain.RefreshRequest;
+import com.finance.api.auth.domain.RegisterRequest;
 import com.finance.api.auth.domain.SessionResponse;
 import com.finance.api.common.api.ApiResponse;
 
@@ -25,13 +26,23 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Auth", description = "Login, refresh, logout and session check")
+@Tag(name = "Auth", description = "Register, login, refresh, logout and session check")
 public class AuthController {
 
     private final AuthService authService;
 
     public AuthController(AuthService authService) {
         this.authService = authService;
+    }
+
+    @Operation(summary = "Register a new user (e-mail + password) and sign in")
+    @PostMapping("/register")
+    public ApiResponse<LoginResponse> register(
+            @Valid @RequestBody RegisterRequest in,
+            @Parameter(hidden = true) HttpServletRequest http
+    ) {
+        var out = authService.register(in, http);
+        return ApiResponse.ok("Registered", out);
     }
 
     @Operation(summary = "Authenticate with credentials and start a session")

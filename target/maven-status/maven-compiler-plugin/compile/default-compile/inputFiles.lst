@@ -5,6 +5,8 @@ C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\Jw
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\LoginRequest.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\LoginResponse.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\RefreshRequest.java
+C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\RegisterRequest.java
+C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\RegisterResponse.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\SessionResponse.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\TokenClaims.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\persistence\RefreshTokenEntity.java

@@ -15,6 +15,7 @@ import com.finance.api.auth.domain.JwtPair;
 import com.finance.api.auth.domain.LoginRequest;
 import com.finance.api.auth.domain.LoginResponse;
 import com.finance.api.auth.domain.RefreshRequest;
+import com.finance.api.auth.domain.RegisterRequest; // <-- NEW
 import com.finance.api.auth.persistence.RefreshTokenEntity;
 import com.finance.api.auth.persistence.RefreshTokenRepository;
 import com.finance.api.common.exception.BadRequestException;
@@ -29,103 +30,124 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class AuthService {
 
-  private final UserRepository users;
-  private final RefreshTokenRepository refreshTokens;
-  private final PasswordEncoder encoder;
-  private final JwtService jwt;
+    private final UserRepository users;
+    private final RefreshTokenRepository refreshTokens;
+    private final PasswordEncoder encoder;
+    private final JwtService jwt;
 
-  public AuthService(UserRepository users,
-                     RefreshTokenRepository refreshTokens,
-                     PasswordEncoder encoder,
-                     JwtService jwt) {
-    this.users = users;
-    this.refreshTokens = refreshTokens;
-    this.encoder = encoder;
-    this.jwt = jwt;
-  }
-
-  @Transactional
-  public LoginResponse login(LoginRequest in, HttpServletRequest http) {
-    UserEntity user = users.findByEmailIgnoreCase(in.email())
-        .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
-
-    if (!encoder.matches(in.password(), user.getPasswordHash())) {
-      throw new UnauthorizedException("Invalid credentials");
+    public AuthService(UserRepository users,
+            RefreshTokenRepository refreshTokens,
+            PasswordEncoder encoder,
+            JwtService jwt) {
+        this.users = users;
+        this.refreshTokens = refreshTokens;
+        this.encoder = encoder;
+        this.jwt = jwt;
     }
 
-    String access = jwt.generateAccess(user.getId(), user.getEmail());
-    String refresh = jwt.generateRefresh(user.getId());
+    @Transactional
+    public LoginResponse register(RegisterRequest in, HttpServletRequest http) {
+        users.findByEmailIgnoreCase(in.email())
+                .ifPresent(u -> {
+                    throw new BadRequestException("E-mail already in use");
+                });
 
-    persistRefreshToken(user.getId(), refresh, http);
+        UserEntity user = new UserEntity();
+        user.setEmail(in.email().trim().toLowerCase());
+        user.setPasswordHash(encoder.encode(in.password()));
+        user = users.save(user);
 
-    return new LoginResponse(user.getId(), user.getEmail(), new JwtPair(access, refresh));
-  }
+        String access = jwt.generateAccess(user.getId(), user.getEmail());
+        String refresh = jwt.generateRefresh(user.getId());
+        persistRefreshToken(user.getId(), refresh, http);
 
-  @Transactional
-  public LoginResponse refresh(RefreshRequest in, HttpServletRequest http) {
-    Jws<Claims> jws = jwt.parse(in.refreshToken());
-    UUID userId = UUID.fromString(jws.getBody().getSubject());
-    Instant exp = jws.getBody().getExpiration().toInstant();
-
-    String tokenHash = sha256(in.refreshToken());
-    var opt = refreshTokens.findByUserIdAndTokenHashAndRevokedFalseAndExpiresAtAfter(userId, tokenHash, Instant.now());
-    if (opt.isEmpty()) {
-      throw new UnauthorizedException("Refresh token is invalid or revoked");
+        return new LoginResponse(user.getId(), user.getEmail(), new JwtPair(access, refresh));
     }
 
-    RefreshTokenEntity current = opt.get();
-    current.setRevoked(true);
-    refreshTokens.save(current);
+    @Transactional
+    public LoginResponse login(LoginRequest in, HttpServletRequest http) {
+        UserEntity user = users.findByEmailIgnoreCase(in.email())
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
-    String access = jwt.generateAccess(userId, jws.getBody().get("email", String.class));
-    String newRefresh = jwt.generateRefresh(userId);
-    persistRefreshToken(userId, newRefresh, http);
+        if (!encoder.matches(in.password(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid credentials");
+        }
 
-    return new LoginResponse(userId, jws.getBody().get("email", String.class), new JwtPair(access, newRefresh));
-  }
+        String access = jwt.generateAccess(user.getId(), user.getEmail());
+        String refresh = jwt.generateRefresh(user.getId());
 
-  @Transactional
-  public void logout(UUID userId, HttpServletRequest http) {
-    String userAgent = headerOrEmpty(http, "User-Agent");
-    List<RefreshTokenEntity> list = refreshTokens.findAllByUserIdAndUserAgentAndRevokedFalse(userId, userAgent);
-    for (var rt : list) {
-      rt.setRevoked(true);
+        persistRefreshToken(user.getId(), refresh, http);
+
+        return new LoginResponse(user.getId(), user.getEmail(), new JwtPair(access, refresh));
     }
-    refreshTokens.saveAll(list);
-  }
 
+    @Transactional
+    public LoginResponse refresh(RefreshRequest in, HttpServletRequest http) {
+        Jws<Claims> jws = jwt.parse(in.refreshToken());
+        UUID userId = UUID.fromString(jws.getBody().getSubject());
+        Instant exp = jws.getBody().getExpiration().toInstant();
 
-  private void persistRefreshToken(UUID userId, String refreshToken, HttpServletRequest http) {
-    var entity = new RefreshTokenEntity();
-    entity.setUserId(userId);
-    entity.setTokenHash(sha256(refreshToken));
-    entity.setUserAgent(headerOrEmpty(http, "User-Agent"));
-    entity.setIpAddress(remoteIp(http));
-    entity.setExpiresAt(jwt.parse(refreshToken).getBody().getExpiration().toInstant());
-    entity.setRevoked(false);
-    refreshTokens.save(entity);
-  }
+        String tokenHash = sha256(in.refreshToken());
+        var opt = refreshTokens.findByUserIdAndTokenHashAndRevokedFalseAndExpiresAtAfter(
+                userId, tokenHash, Instant.now());
+        if (opt.isEmpty()) {
+            throw new UnauthorizedException("Refresh token is invalid or revoked");
+        }
 
-  private static String headerOrEmpty(HttpServletRequest http, String name) {
-    String h = http.getHeader(name);
-    return h == null ? "" : h;
-  }
+        RefreshTokenEntity current = opt.get();
+        current.setRevoked(true);
+        refreshTokens.save(current);
 
-  private static String remoteIp(HttpServletRequest http) {
-    String xff = http.getHeader("X-Forwarded-For");
-    if (xff != null && !xff.isBlank()) {
-      return xff.split(",")[0].trim();
+        String access = jwt.generateAccess(userId, jws.getBody().get("email", String.class));
+        String newRefresh = jwt.generateRefresh(userId);
+        persistRefreshToken(userId, newRefresh, http);
+
+        return new LoginResponse(userId, jws.getBody().get("email", String.class),
+                new JwtPair(access, newRefresh));
     }
-    return http.getRemoteAddr();
-  }
 
-  private static String sha256(String value) {
-    try {
-      MessageDigest md = MessageDigest.getInstance("SHA-256");
-      byte[] digest = md.digest(value.getBytes(StandardCharsets.UTF_8));
-      return HexFormat.of().formatHex(digest);
-    } catch (Exception e) {
-      throw new BadRequestException("Unable to hash token");
+    @Transactional
+    public void logout(UUID userId, HttpServletRequest http) {
+        String userAgent = headerOrEmpty(http, "User-Agent");
+        List<RefreshTokenEntity> list
+                = refreshTokens.findAllByUserIdAndUserAgentAndRevokedFalse(userId, userAgent);
+        for (var rt : list) {
+            rt.setRevoked(true);
+        }
+        refreshTokens.saveAll(list);
     }
-  }
+
+    private void persistRefreshToken(UUID userId, String refreshToken, HttpServletRequest http) {
+        var entity = new RefreshTokenEntity();
+        entity.setUserId(userId);
+        entity.setTokenHash(sha256(refreshToken));
+        entity.setUserAgent(headerOrEmpty(http, "User-Agent"));
+        entity.setIpAddress(remoteIp(http));
+        entity.setExpiresAt(jwt.parse(refreshToken).getBody().getExpiration().toInstant());
+        entity.setRevoked(false);
+        refreshTokens.save(entity);
+    }
+
+    private static String headerOrEmpty(HttpServletRequest http, String name) {
+        String h = http.getHeader(name);
+        return h == null ? "" : h;
+    }
+
+    private static String remoteIp(HttpServletRequest http) {
+        String xff = http.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        return http.getRemoteAddr();
+    }
+
+    private static String sha256(String value) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception e) {
+            throw new BadRequestException("Unable to hash token");
+        }
+    }
 }
