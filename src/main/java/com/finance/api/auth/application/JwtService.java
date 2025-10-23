@@ -6,9 +6,8 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import com.finance.api.config.JwtProperties;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -16,49 +15,64 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
+
 @Service
 public class JwtService {
 
-    private final Key key;
+    private final Key signingKey;
     private final String issuer;
-    private final long accessTtl;
-    private final long refreshTtl;
+    private final long accessTtlSeconds;
+    private final long refreshTtlSeconds;
 
-    public JwtService(JwtProperties props) {
-        this.issuer = props.getIssuer();
-        this.key = Keys.hmacShaKeyFor(props.getSecret().getBytes(StandardCharsets.UTF_8));
-        this.accessTtl = props.getAccess().getTtl();
-        this.refreshTtl = props.getRefresh().getTtl();
-    }
-
-    public Jws<Claims> parse(String jwt) {
-        return Jwts.parserBuilder()
-                .requireIssuer(issuer)
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(jwt);
+    public JwtService(
+            @Value("${security.jwt.secret}") String secret,
+            @Value("${security.jwt.issuer}") String issuer,
+            @Value("${security.jwt.access.ttl}") long accessTtlSeconds,
+            @Value("${security.jwt.refresh.ttl}") long refreshTtlSeconds
+    ) {
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.issuer = issuer;
+        this.accessTtlSeconds = accessTtlSeconds;
+        this.refreshTtlSeconds = refreshTtlSeconds;
     }
 
     public String generateAccess(UUID userId, String email) {
         Instant now = Instant.now();
+        Instant exp = now.plusSeconds(accessTtlSeconds);
         return Jwts.builder()
-                .setIssuer(issuer)
                 .setSubject(userId.toString())
                 .claim("email", email)
+                .claim("type", "access")
+                .setIssuer(issuer)
                 .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(now.plusSeconds(accessTtl)))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(Date.from(exp))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String generateRefresh(UUID userId) {
         Instant now = Instant.now();
+        Instant exp = now.plusSeconds(refreshTtlSeconds);
         return Jwts.builder()
-                .setIssuer(issuer)
                 .setSubject(userId.toString())
+                .claim("type", "refresh")
+                .setIssuer(issuer)
                 .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(now.plusSeconds(refreshTtl)))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(Date.from(exp))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public Jws<Claims> parse(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .requireIssuer(issuer)
+                // .setAllowedClockSkewSeconds(30) // optional skew
+                .build()
+                .parseClaimsJws(token);
+    }
+
+    public Claims parseClaims(String token) {
+        return parse(token).getBody();
     }
 }

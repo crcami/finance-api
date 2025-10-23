@@ -1,1 +1,9 @@
-{ "java.configuration.updateBuildConfiguration": "interactive" }
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "files.associations": {
+        "**/.env": "ini",
+        "**/.env.*": "ini",
+        "**/*.env": "ini",
+        "**/*.env.*": "ini"
+    }
+}

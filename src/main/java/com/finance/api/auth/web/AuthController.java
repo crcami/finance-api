@@ -2,7 +2,6 @@ package com.finance.api.auth.web;
 
 import java.util.UUID;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,11 +16,16 @@ import com.finance.api.auth.domain.RefreshRequest;
 import com.finance.api.auth.domain.SessionResponse;
 import com.finance.api.common.api.ApiResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Auth", description = "Login, refresh, logout and session check")
 public class AuthController {
 
     private final AuthService authService;
@@ -30,32 +34,45 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @Operation(summary = "Authenticate with credentials and start a session")
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest in,
-            HttpServletRequest http) {
+    public ApiResponse<LoginResponse> login(
+            @Valid @RequestBody LoginRequest in,
+            @Parameter(hidden = true) HttpServletRequest http
+    ) {
         var out = authService.login(in, http);
-        return ResponseEntity.ok(ApiResponse.ok("Authenticated", out));
+        return ApiResponse.ok("Authenticated", out);
     }
 
+    @Operation(summary = "Refresh access token using a valid refresh token")
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<LoginResponse>> refresh(@Valid @RequestBody RefreshRequest in,
-            HttpServletRequest http) {
+    public ApiResponse<LoginResponse> refresh(
+            @Valid @RequestBody RefreshRequest in,
+            @Parameter(hidden = true) HttpServletRequest http
+    ) {
         var out = authService.refresh(in, http);
-        return ResponseEntity.ok(ApiResponse.ok("Refreshed", out));
+        return ApiResponse.ok("Refreshed", out);
     }
 
+    @Operation(summary = "Logout current session (requires authentication)")
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(Authentication authentication, HttpServletRequest http) {
+    @SecurityRequirement(name = "bearer-jwt")
+    public ApiResponse<Void> logout(
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(hidden = true) HttpServletRequest http
+    ) {
         if (authentication == null || !(authentication.getPrincipal() instanceof UUID userId)) {
-            return ResponseEntity.status(401).body(ApiResponse.fail("Unauthenticated"));
+            return ApiResponse.fail("Unauthenticated");
         }
         authService.logout(userId, http);
-        return ResponseEntity.ok(ApiResponse.ok("Logged out", null));
+        return ApiResponse.ok("Logged out", null);
     }
 
-
+    @Operation(summary = "Return session status and current user id (if authenticated)")
     @GetMapping("/session")
-    public ApiResponse<SessionResponse> session(Authentication authentication) {
+    public ApiResponse<SessionResponse> session(
+            @Parameter(hidden = true) Authentication authentication
+    ) {
         boolean ok = authentication != null && authentication.getPrincipal() instanceof UUID;
         UUID userId = ok ? (UUID) authentication.getPrincipal() : null;
         return ApiResponse.ok(new SessionResponse(ok, userId));
