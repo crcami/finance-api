@@ -3,17 +3,13 @@ package com.finance.api.auth.web;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.finance.api.auth.application.AuthService; // <- NEW
+import com.finance.api.auth.application.AuthService;
 import com.finance.api.auth.domain.LoginRequest;
 import com.finance.api.auth.domain.LoginResponse;
 import com.finance.api.auth.domain.RefreshRequest;
-import com.finance.api.auth.domain.RegisterRequest;
+import com.finance.api.auth.domain.RegisterRequest; // <- NEW
 import com.finance.api.auth.domain.SessionResponse;
 import com.finance.api.common.api.ApiResponse;
 
