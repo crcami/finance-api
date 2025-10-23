@@ -15,7 +15,7 @@ import com.finance.api.auth.domain.JwtPair;
 import com.finance.api.auth.domain.LoginRequest;
 import com.finance.api.auth.domain.LoginResponse;
 import com.finance.api.auth.domain.RefreshRequest;
-import com.finance.api.auth.domain.RegisterRequest; // <-- NEW
+import com.finance.api.auth.domain.RegisterRequest;
 import com.finance.api.auth.persistence.RefreshTokenEntity;
 import com.finance.api.auth.persistence.RefreshTokenRepository;
 import com.finance.api.common.exception.BadRequestException;
@@ -55,6 +55,12 @@ public class AuthService {
         UserEntity user = new UserEntity();
         user.setEmail(in.email().trim().toLowerCase());
         user.setPasswordHash(encoder.encode(in.password()));
+
+        String safeName = (in.fullName() != null && !in.fullName().isBlank())
+                ? in.fullName().trim()
+                : toDisplayNameFromEmail(in.email());
+        user.setFullName(safeName);
+
         user = users.save(user);
 
         String access = jwt.generateAccess(user.getId(), user.getEmail());
@@ -149,5 +155,16 @@ public class AuthService {
         } catch (Exception e) {
             throw new BadRequestException("Unable to hash token");
         }
+    }
+
+    private static String toDisplayNameFromEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return "User";
+        }
+        String local = email.trim().split("@")[0];
+        if (local.isBlank()) {
+            return "User";
+        }
+        return Character.toUpperCase(local.charAt(0)) + local.substring(1);
     }
 }
