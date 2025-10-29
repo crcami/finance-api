@@ -52,7 +52,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             } catch (Exception ignored) {
-                // invalid/expired token -> proceed unauthenticated (secured endpoints will 401)
             }
         }
 
@@ -61,13 +60,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        String method = request.getMethod();
+        final String path = request.getServletPath(); 
+        final String method = request.getMethod();
 
         boolean isDocs = path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui");
+        boolean isOptions = "OPTIONS".equals(method);
         boolean isPublicAuth
-                = ("POST".equals(method) && ("/auth/login".equals(path) || "/auth/register".equals(path) || "/auth/refresh".equals(path) || "/auth/logout".equals(path)));
+                = ("POST".equals(method) && ("/auth/login".equals(path)
+                || "/auth/register".equals(path)
+                || "/auth/refresh".equals(path)
+                || "/auth/logout".equals(path)
+                || "/auth/reset-password".equals(path) 
+                ))
+                || ("GET".equals(method) && ("/auth/session".equals(path)
+                || "/users/by-email".equals(path)));
 
-        return isDocs || isPublicAuth;
+        return isDocs || isOptions || isPublicAuth;
     }
+
 }

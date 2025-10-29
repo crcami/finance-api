@@ -2,9 +2,12 @@ package com.finance.api.common.exception;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException; // <--- add
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,16 +21,33 @@ import jakarta.validation.ConstraintViolationException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(BaseAppException.class)
-    public ResponseEntity<ErrorEnvelope> handleBase(BaseAppException ex, org.springframework.web.context.request.WebRequest request) {
+    public ResponseEntity<ErrorEnvelope> handleBase(BaseAppException ex,
+            org.springframework.web.context.request.WebRequest request) {
         var body = ErrorEnvelope.of(ex.getMessage(), ex.getCode(), getPath(request), List.of());
         return ResponseEntity.status(ex.getStatus()).body(body);
     }
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ErrorEnvelope> handleNotFound(NotFoundException ex, org.springframework.web.context.request.WebRequest request) {
+    public ResponseEntity<ErrorEnvelope> handleNotFound(NotFoundException ex,
+            org.springframework.web.context.request.WebRequest request) {
         var body = ErrorEnvelope.of(ex.getMessage(), ex.getCode(), getPath(request), List.of());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+   
+    @ExceptionHandler(MailException.class)
+    public ResponseEntity<ErrorEnvelope> handleMail(MailException ex,
+            org.springframework.web.context.request.WebRequest request) {
+        log.error("MailException while sending e-mail: {}", ex.getMessage(), ex);
+        var body = ErrorEnvelope.of(
+                "E-mail service unavailable",
+                "MAIL_SERVICE_UNAVAILABLE",
+                getPath(request),
+                List.of());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -65,7 +85,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorEnvelope> handleGeneric(Exception ex, org.springframework.web.context.request.WebRequest request) {
+    public ResponseEntity<ErrorEnvelope> handleGeneric(Exception ex,
+            org.springframework.web.context.request.WebRequest request) {
+        log.error("Unexpected error: {}", ex.getMessage(), ex);
         var body = ErrorEnvelope.of("Unexpected error", "UNEXPECTED_ERROR", getPath(request), List.of());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }

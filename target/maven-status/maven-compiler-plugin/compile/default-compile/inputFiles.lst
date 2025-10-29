@@ -1,9 +1,11 @@
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\application\AuthService.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\application\JwtAuthFilter.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\application\JwtService.java
+C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\application\PasswordReset.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\JwtPair.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\LoginRequest.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\LoginResponse.java
+C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\PasswordNew.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\RefreshRequest.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\RegisterRequest.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\auth\domain\RegisterResponse.java
@@ -34,6 +36,7 @@ C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\common\util\Da
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\common\util\MoneyUtils.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\common\util\SpecificationUtils.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\config\AdminBootstrap.java
+C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\config\ConfigNewPassword.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\config\CorsConfig.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\config\JacksonConfig.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\config\JwtProperties.java

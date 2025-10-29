@@ -3,20 +3,28 @@ package com.finance.api.auth.web;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.finance.api.auth.application.AuthService;
+import com.finance.api.auth.application.PasswordReset;
 import com.finance.api.auth.domain.LoginRequest;
 import com.finance.api.auth.domain.LoginResponse;
+import com.finance.api.auth.domain.PasswordNew;
 import com.finance.api.auth.domain.RefreshRequest;
-import com.finance.api.auth.domain.RegisterRequest; // <- NEW
+import com.finance.api.auth.domain.RegisterRequest;
 import com.finance.api.auth.domain.SessionResponse;
 import com.finance.api.common.api.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
@@ -26,9 +34,11 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordReset passwordReset;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, PasswordReset passwordReset) {
         this.authService = authService;
+        this.passwordReset = passwordReset;
     }
 
     @Operation(summary = "Register a new user (e-mail + password) and sign in")
@@ -83,5 +93,14 @@ public class AuthController {
         boolean ok = authentication != null && authentication.getPrincipal() instanceof UUID;
         UUID userId = ok ? (UUID) authentication.getPrincipal() : null;
         return ApiResponse.ok(new SessionResponse(ok, userId));
+    }
+
+    @PermitAll
+    @Operation(summary = "Public: send a temporary password to the user's e-mail")
+    @PostMapping("/reset-password")
+    @SecurityRequirements(value = {})
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody PasswordNew in) {
+        passwordReset.resetAndSend(in);
+        return ApiResponse.ok("Nova senha temporária enviada no email, após o login favor alterar novamente.", null);
     }
 }

@@ -49,4 +49,11 @@ public class UserService {
   private static UserProfileResponse toResponse(UserEntity u) {
     return new UserProfileResponse(u.getId(), u.getEmail(), u.getFullName());
   }
+
+    @Transactional(readOnly = true)
+    public String findFullNameByEmail(String email) {
+        var u = users.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        return u.getFullName();
+}
 }
