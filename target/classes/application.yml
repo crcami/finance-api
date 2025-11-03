@@ -28,8 +28,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USER}          # seu Gmail
-    password: ${MAIL_PASS}          # senha de app (16 chars, sem espaços)
+    username: ${MAIL_USER}
+    password: ${MAIL_PASS}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
@@ -37,8 +37,6 @@ spring:
       mail.smtp.timeout: 5000
       mail.smtp.writetimeout: 5000
     default-encoding: UTF-8
-
-   
 
 server:
   port: 8080
@@ -57,6 +55,13 @@ security:
       ttl: 2592000
     secret: "Jp9y8i7Y9p4JrBzqY7B1YqYy9xM2J7mSgXxQx8v0h4w"
 
+  password-reset:
+    token-ttl: PT15M                        
+    base-url: ${APP_BASE_URL:http://localhost:3000} 
+    rate-limit:
+      window: PT15M
+      max-requests: 5
+
 management:
   endpoints:
     web:
@@ -67,7 +72,7 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
-    mail:
+  mail:
     from: ${MAIL_FROM:${MAIL_USER}}
 
   bootstrap:

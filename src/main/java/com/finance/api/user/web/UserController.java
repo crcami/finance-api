@@ -1,6 +1,5 @@
 package com.finance.api.user.web;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
@@ -8,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.finance.api.common.api.ApiResponse;
@@ -19,7 +17,6 @@ import com.finance.api.user.domain.UserProfileResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag; 
 import jakarta.validation.Valid;
 
@@ -57,14 +54,6 @@ public class UserController {
         UUID userId = (UUID) auth.getPrincipal();
         service.changePassword(userId, in);
         return ApiResponse.ok("Password changed", null);
-    }
-
-    @Operation(summary = "Public: get user's full name by e-mail (for password recovery)")
-    @SecurityRequirements(value = {}) 
-    @GetMapping("/by-email")
-    public ApiResponse<Map<String, String>> getByEmail(@RequestParam String email) {
-        String fullName = service.findFullNameByEmail(email);
-        return ApiResponse.ok(Map.of("full_name", fullName));
     }
 
     
