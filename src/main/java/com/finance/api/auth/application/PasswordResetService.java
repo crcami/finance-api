@@ -10,7 +10,6 @@ import java.util.HexFormat;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -92,7 +91,11 @@ public class PasswordResetService {
     }
 
     private void sendResetEmail(UserEntity user, String token) {
-        String url = resetBaseUrl + "/reset-password?token=" + token;
+
+        String base = resetBaseUrl.replaceAll("/+$", "");
+
+        String url = base + "/auth/reset-password?token="
+                + java.net.URLEncoder.encode(token, java.nio.charset.StandardCharsets.UTF_8);
 
         String subject = "Redefinição de senha";
         String greeting = (user.getFullName() == null || user.getFullName().isBlank())
@@ -109,7 +112,7 @@ public class PasswordResetService {
                 + "Se você não solicitou esta ação, pode ignorar este e-mail.\n\n"
                 + "Equipe Finance";
 
-        SimpleMailMessage msg = new SimpleMailMessage();
+        org.springframework.mail.SimpleMailMessage msg = new org.springframework.mail.SimpleMailMessage();
         if (mailFrom != null && !mailFrom.isBlank()) {
             msg.setFrom(mailFrom);
         }
@@ -118,6 +121,7 @@ public class PasswordResetService {
         msg.setText(body);
         mailer.send(msg);
     }
+
 
     private String generateToken(int numBytes) {
         byte[] bytes = new byte[numBytes];

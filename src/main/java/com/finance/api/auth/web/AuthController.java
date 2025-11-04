@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.finance.api.auth.application.AuthService;
-import com.finance.api.auth.application.PasswordResetService;
 import com.finance.api.auth.domain.LoginRequest;
 import com.finance.api.auth.domain.LoginResponse;
 import com.finance.api.auth.domain.RefreshRequest;
@@ -31,11 +30,10 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
-    private final PasswordResetService passwordReset;
+  
 
-    public AuthController(AuthService authService, PasswordResetService passwordReset) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.passwordReset = passwordReset;
     }
 
     @Operation(summary = "Register a new user (e-mail + password) and sign in")
