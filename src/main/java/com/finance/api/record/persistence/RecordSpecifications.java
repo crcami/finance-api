@@ -9,7 +9,6 @@ import org.springframework.data.jpa.domain.Specification;
 import com.finance.api.record.domain.RecordKind;
 import com.finance.api.record.domain.RecordStatus;
 
-/** Factory for JPA Specifications on RecordEntity. */
 public final class RecordSpecifications {
 
   private RecordSpecifications() {}

@@ -26,7 +26,7 @@ import com.finance.api.record.persistence.RecordEntity;
 import com.finance.api.record.persistence.RecordRepository;
 import com.finance.api.record.persistence.RecordSpecifications;
 
-/** Orchestrates record use cases. */
+
 @Service
 public class RecordService {
 
@@ -38,7 +38,6 @@ public class RecordService {
     this.bulkRepo = bulkRepo;
   }
 
-  /** Lists records filtering by ownership + optional filters. */
   @Transactional(readOnly = true)
   public Page<RecordResponse> list(
       UUID userId,
@@ -148,7 +147,6 @@ public class RecordService {
     return toResponse(repo.save(e));
   }
 
-  /** Maps entity to DTO. */
   private static RecordResponse toResponse(RecordEntity e) {
     return new RecordResponse(
         e.getId(), e.getCategoryId(), e.getKind(), e.getStatus(),

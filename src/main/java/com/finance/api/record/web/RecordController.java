@@ -43,7 +43,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-/** Exposes endpoints to manage records (list, CRUD, confirm). */
 @RestController
 @RequestMapping("/records")
 @SecurityRequirement(name = "bearer-jwt")
@@ -67,7 +66,7 @@ public class RecordController {
         throw new IllegalStateException("Unsupported principal type: " + (p == null ? "null" : p.getClass()));
     }
 
-    // ---------- NEW: Listagem com filtros (mês ou intervalo) ----------
+  
     @Operation(
         summary = "List records (paged) with month or date range filters",
         description = "Filter by month (yyyy-MM) or by startDate/endDate; optional filters: status, kind, categoryId."
@@ -100,7 +99,6 @@ public class RecordController {
                 pageable);
         return ApiResponse.ok(page);
     }
-    // ------------------------------------------------------------------
 
     @Operation(summary = "Bulk create records (idempotent by X-Request-Id)")
     @PostMapping("/bulk")
