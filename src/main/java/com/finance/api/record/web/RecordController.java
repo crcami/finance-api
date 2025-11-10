@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,16 +37,27 @@ import jakarta.validation.Valid;
 @Tag(name = "Records", description = "Income/expense records management")
 public class RecordController {
 
+    private static final Logger log = LoggerFactory.getLogger(RecordController.class);
+
     private final RecordService service;
 
     public RecordController(RecordService service) {
         this.service = service;
     }
 
+    private static UUID resolveUserId(Authentication auth) {
+        try { return UUID.fromString(auth.getName()); } catch (Exception ignore) {}
+        Object p = auth.getPrincipal();
+        if (p instanceof UUID u) return u;
+        if (p instanceof String s) return UUID.fromString(s);
+
+        throw new IllegalStateException("Unsupported principal type: " + (p == null ? "null" : p.getClass()));
+    }
+
     @Operation(summary = "Bulk create records (idempotent by X-Request-Id)")
     @PostMapping("/bulk")
     public ApiResponse<BulkResult> bulkCreate(
-            @Valid @RequestBody List<RecordRequest> items,
+            @Valid @RequestBody List<@Valid RecordRequest> items,
             @Parameter(
                     name = "X-Request-Id",
                     description = "Idempotency key to safely retry the same request",
@@ -53,7 +66,8 @@ public class RecordController {
             @RequestHeader(value = "X-Request-Id", required = false) String requestId,
             @Parameter(hidden = true) Authentication auth
     ) {
-        UUID userId = (UUID) auth.getPrincipal();
+        UUID userId = resolveUserId(auth);
+        log.debug("bulkCreate userId={}, count={}, reqId={}", userId, items == null ? 0 : items.size(), requestId);
         var result = service.bulkCreate(userId, items, requestId);
         return ApiResponse.ok("Bulk processed", result);
     }
@@ -64,7 +78,7 @@ public class RecordController {
             @PathVariable UUID id,
             @Parameter(hidden = true) Authentication auth
     ) {
-        UUID userId = (UUID) auth.getPrincipal();
+        UUID userId = resolveUserId(auth);
         return ApiResponse.ok(service.get(userId, id));
     }
 
@@ -75,7 +89,7 @@ public class RecordController {
             @Valid @RequestBody RecordRequest in,
             @Parameter(hidden = true) Authentication auth
     ) {
-        UUID userId = (UUID) auth.getPrincipal();
+        UUID userId = resolveUserId(auth);
         return ApiResponse.ok("Updated", service.update(userId, id, in));
     }
 
@@ -85,7 +99,7 @@ public class RecordController {
             @RequestBody List<UUID> ids,
             @Parameter(hidden = true) Authentication auth
     ) {
-        UUID userId = (UUID) auth.getPrincipal();
+        UUID userId = resolveUserId(auth);
         long deleted = service.deleteMany(userId, ids);
         return ApiResponse.ok("Deleted", Map.of("deleted", deleted));
     }
@@ -96,7 +110,7 @@ public class RecordController {
             @PathVariable UUID id,
             @Parameter(hidden = true) Authentication auth
     ) {
-        UUID userId = (UUID) auth.getPrincipal();
+        UUID userId = resolveUserId(auth);
         return ApiResponse.ok("Confirmed", service.confirm(userId, id));
     }
 }
