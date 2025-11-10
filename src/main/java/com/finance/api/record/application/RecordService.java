@@ -1,15 +1,22 @@
 package com.finance.api.record.application;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.finance.api.common.exception.NotFoundException;
 import com.finance.api.record.domain.BulkResult;
+import com.finance.api.record.domain.RecordKind;
 import com.finance.api.record.domain.RecordRequest;
 import com.finance.api.record.domain.RecordResponse;
 import com.finance.api.record.domain.RecordStatus;
@@ -17,7 +24,9 @@ import com.finance.api.record.persistence.BulkRequestEntity;
 import com.finance.api.record.persistence.BulkRequestRepository;
 import com.finance.api.record.persistence.RecordEntity;
 import com.finance.api.record.persistence.RecordRepository;
+import com.finance.api.record.persistence.RecordSpecifications;
 
+/** Orchestrates record use cases. */
 @Service
 public class RecordService {
 
@@ -27,6 +36,36 @@ public class RecordService {
   public RecordService(RecordRepository repo, BulkRequestRepository bulkRepo) {
     this.repo = repo;
     this.bulkRepo = bulkRepo;
+  }
+
+  /** Lists records filtering by ownership + optional filters. */
+  @Transactional(readOnly = true)
+  public Page<RecordResponse> list(
+      UUID userId,
+      Optional<LocalDate> startDate,
+      Optional<LocalDate> endDate,
+      Optional<YearMonth> month,
+      Optional<RecordStatus> status,
+      Optional<RecordKind> kind,
+      Optional<UUID> categoryId,
+      Pageable pageable) {
+
+    Specification<RecordEntity> spec = Specification.where(RecordSpecifications.belongsTo(userId));
+
+    if (month.isPresent()) {
+      spec = spec.and(RecordSpecifications.monthEquals(month.get()));
+    } else if (startDate.isPresent() || endDate.isPresent()) {
+      LocalDate from = startDate.orElse(LocalDate.MIN);
+      LocalDate to = endDate.orElse(LocalDate.MAX);
+      spec = spec.and(RecordSpecifications.dueDateBetween(from, to));
+    }
+
+    if (status.isPresent())    spec = spec.and(RecordSpecifications.hasStatus(status.get()));
+    if (kind.isPresent())      spec = spec.and(RecordSpecifications.hasKind(kind.get()));
+    if (categoryId.isPresent()) spec = spec.and(RecordSpecifications.hasCategory(categoryId.get()));
+
+    Page<RecordEntity> page = repo.findAll(spec, pageable);
+    return page.map(RecordService::toResponse);
   }
 
   @Transactional(readOnly = true)
@@ -101,7 +140,6 @@ public class RecordService {
   public RecordResponse confirm(UUID userId, UUID id) {
     var e = repo.findByIdAndUserId(id, userId)
         .orElseThrow(() -> new NotFoundException("Record not found"));
-
     switch (e.getKind()) {
       case EXPENSE -> e.setStatus(RecordStatus.PAID);
       case INCOME  -> e.setStatus(RecordStatus.RECEIVED);
@@ -110,8 +148,7 @@ public class RecordService {
     return toResponse(repo.save(e));
   }
 
-
-
+  /** Maps entity to DTO. */
   private static RecordResponse toResponse(RecordEntity e) {
     return new RecordResponse(
         e.getId(), e.getCategoryId(), e.getKind(), e.getStatus(),

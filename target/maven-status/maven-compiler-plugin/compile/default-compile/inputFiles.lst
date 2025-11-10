@@ -57,6 +57,7 @@ C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persist
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persistence\BulkRequestRepository.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persistence\RecordEntity.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persistence\RecordRepository.java
+C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persistence\RecordSpecifications.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\web\RecordController.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\report\application\ReportService.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\report\domain\CashflowItem.java
