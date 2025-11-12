@@ -34,6 +34,7 @@ import com.finance.api.record.domain.RecordKind;
 import com.finance.api.record.domain.RecordRequest;
 import com.finance.api.record.domain.RecordResponse;
 import com.finance.api.record.domain.RecordStatus;
+import com.finance.api.record.domain.RecordStatusUpdateRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -66,7 +67,6 @@ public class RecordController {
         throw new IllegalStateException("Unsupported principal type: " + (p == null ? "null" : p.getClass()));
     }
 
-  
     @Operation(
         summary = "List records (paged) with month or date range filters",
         description = "Filter by month (yyyy-MM) or by startDate/endDate; optional filters: status, kind, categoryId."
@@ -114,6 +114,17 @@ public class RecordController {
         return ApiResponse.ok("Bulk processed", result);
     }
 
+    @Operation(summary = "Create a single record")
+    @PostMapping
+    public ApiResponse<RecordResponse> create(
+            @Valid @RequestBody RecordRequest in,
+            @Parameter(hidden = true) Authentication auth
+    ) {
+        UUID userId = resolveUserId(auth);
+        var out = service.create(userId, in);
+        return ApiResponse.ok("Created", out);
+    }
+
     @Operation(summary = "Get record by id")
     @GetMapping("/{id}")
     public ApiResponse<RecordResponse> get(@PathVariable UUID id, @Parameter(hidden = true) Authentication auth) {
@@ -148,5 +159,16 @@ public class RecordController {
     public ApiResponse<RecordResponse> confirm(@PathVariable UUID id, @Parameter(hidden = true) Authentication auth) {
         UUID userId = resolveUserId(auth);
         return ApiResponse.ok("Confirmed", service.confirm(userId, id));
+    }
+
+    @Operation(summary = "Update record status explicitly")
+    @PatchMapping("/{id}/status")
+    public ApiResponse<RecordResponse> updateStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody RecordStatusUpdateRequest in,
+            @Parameter(hidden = true) Authentication auth
+    ) {
+        UUID userId = resolveUserId(auth);
+        return ApiResponse.ok("Status updated", service.updateStatus(userId, id, in.status()));
     }
 }

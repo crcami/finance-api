@@ -53,6 +53,7 @@ C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\domain\
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\domain\RecordRequest.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\domain\RecordResponse.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\domain\RecordStatus.java
+C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\domain\RecordStatusUpdateRequest.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persistence\BulkRequestEntity.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persistence\BulkRequestRepository.java
 C:\Users\camil\Projetos\finance-api\src\main\java\com\finance\api\record\persistence\RecordEntity.java

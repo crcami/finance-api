@@ -15,6 +15,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.finance.api.auth.application.JwtAuthFilter;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -48,7 +50,15 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.GET, "/users/by-email").permitAll()
 
+                .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
+
                 .anyRequest().authenticated()
+            )
+            .logout(logout -> logout
+                .logoutUrl("/auth/logout")
+                .clearAuthentication(true)
+                .invalidateHttpSession(false) // stateless
+                .logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpServletResponse.SC_NO_CONTENT)) 
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
